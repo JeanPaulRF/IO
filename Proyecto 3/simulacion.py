@@ -1,21 +1,30 @@
+from clases import *
+import random
+import math
+
 lambda_ = 0
-colas = []
+queues = []
 mu = []
-matriz = []
+matrix = []
+eventQueue = []
+clients = []
+countClient = 0
+nQueues = 0
 
 def simule(filename, totalTime):
     readFile(filename)
 
-    print(f"Lambda: {lambda_}")
-    print(f"Colas: {colas}")
-    print(f"Mu: {mu}")
-    print(f"Matriz: {matriz}")
+    create(totalTime)
 
+    #print(f"Lambda: {lambda_}")
+    #print(f"queues: {queues}")
+    #print(f"Mu: {mu}")
+    #print(f"matrix: {matrix}")
     return 0
 
 
 def readFile(filename):
-    global lambda_, colas, mu, matriz
+    global lambda_, queues, mu, matrix, nQueues
 
     try:
         with open(filename, 'r') as file:
@@ -26,18 +35,118 @@ def readFile(filename):
         print(f"No se puede abrir el archivo {filename}.")
 
     lambda_ = float(lines[0])
-    colas = int(lines[1])
+    nQueues = int(lines[1])
 
-    for i in range(0, colas):
-        mu.append(float(lines[i + colas]))
+    # Crear colas
+    for i in range(0, nQueues):
+        queues.append(Queue(i))
 
-    for i in range(colas+len(mu), len(lines)):
+    # Leer mu de colas y agregar a la lista
+    for i in range(0, nQueues):
+        mu.append(float(lines[i + nQueues]))
+
+    # Leer cadena de markov y agregar a la matriz
+    for i in range(nQueues+len(mu), len(lines)):
         row = []
         values = lines[i].strip().split()
         for value in values:
             row.append(float(value))
-        matriz.append(row)
+        matrix.append(row)
 
     return 0
 
-print(simule("archivo.txt", 100))
+def getTime(number):
+    if len(eventQueue) == 0:
+        return (-1 * math.log(random.random())) / number
+    else:
+        return eventQueue[len(eventQueue) - 1].tiempo + ((-1 * math.log(random.random())) / number)
+    
+def getDecision():
+    rand = random.random()  # Generar número aleatorio entre 0 y 1
+    total = 0.0
+    queue = -1
+
+    # Recorrer las columnas de la matriz
+    for i in range(len(matrix[0])):
+        total += matrix[0][i]  # Sumar la probabilidad de la columna actual
+
+        # Verificar si el número aleatorio está dentro de la suma acumulada de probabilidades
+        if rand <= total:
+            queue = i
+            break
+
+    return queue
+
+# Función para insertar un evento en el arreglo de eventos
+def insert_event(event):
+    global eventQueue
+
+    # Verificar si el arreglo de eventos está vacío
+    if not eventQueue:
+        eventQueue.append(event)
+    else:
+        # Recorrer el arreglo de eventos y encontrar la posición adecuada según el atributo de tiempo
+        for i in range(len(eventQueue)):
+            if event.time < eventQueue[i].time:
+                eventQueue.insert(i, event)
+                break
+        else:
+            # Si no se encontró una posición adecuada, insertar el evento al final del arreglo
+            eventQueue.append(event)
+
+
+
+
+def create(totalTime):
+    global countClient, eventQueue
+
+    time = getTime(lambda_)
+    client = Client(countClient)
+    clients.append(client)
+    event = Event(countClient, "Llegada al sistema", time)
+    insert_event(event)
+    countClient += 1
+    if time >= totalTime:
+        return 0
+    
+    #decision cadena de markov
+    n = getDecision()
+
+    #cuando si entra a una cola
+    if n != -1:
+        #si el servidor esta ocupado
+        if queues[n].server == True:
+            time = getTime(lambda_)
+            eventQueue.append(client, "Entrada a cola ", time)
+        #si el servidor esta libre
+        else:
+            queues[n].server = True
+            time = getTime(lambda_)
+            eventQueue.append(Event(Client(countClient), "Salida", time))
+            countClient += 1
+
+    #cuando no entra a cola
+    else:
+        salida(totalTime);
+
+    #crear siguiente cliente
+    create(totalTime)
+
+
+def encolar(client, queue):
+    return 0
+    
+
+def atender();
+    
+
+def salida(client, totalTime):
+    time = getTime(lambda_)
+    event = Event(countClient, "Salida del sistema", time)
+    insert_event(event)
+    if time >= totalTime:
+        return 0
+
+
+
+#print(simule("archivo.txt", 100))
