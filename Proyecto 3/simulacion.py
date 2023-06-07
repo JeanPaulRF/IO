@@ -95,20 +95,24 @@ def insert_event(event):
             eventQueue.append(event)
 
 
-
-
 def create(totalTime):
     global countClient, eventQueue
 
     time = getTime(lambda_)
     client = Client(countClient)
     clients.append(client)
-    event = Event(countClient, "Llegada al sistema", time)
-    insert_event(event)
+    insert_event(Event(client.id_client, "Llegada al sistema", time))
     countClient += 1
     if time >= totalTime:
         return 0
     
+    decision(totalTime, client)
+
+    #crear siguiente cliente
+    create(totalTime)
+
+
+def decision(totalTime, client):
     #decision cadena de markov
     n = getDecision()
 
@@ -117,35 +121,26 @@ def create(totalTime):
         #si el servidor esta ocupado
         if queues[n].server == True:
             time = getTime(lambda_)
-            eventQueue.append(client, "Entrada a cola ", time)
+            insert_event(Event(client.id_client, "Entrada a cola {n}", time))
         #si el servidor esta libre
         else:
             queues[n].server = True
             time = getTime(lambda_)
-            eventQueue.append(Event(Client(countClient), "Salida", time))
-            countClient += 1
+            insert_event(Event(client.id_client, "Entra a servidor {n}", time))
+
+            #tiempo de servicio
+            time = getTime(mu[n])
+            insert_event(Event(client.id_client, "Salida de cola {n}", time))
+
+            #vuelve a escoger desicion
+            decision(totalTime, client)
 
     #cuando no entra a cola
     else:
-        salida(totalTime);
+        time = getTime(lambda_)
+        insert_event(Event(client.id_client, "Salida del sistema", time))
 
-    #crear siguiente cliente
-    create(totalTime)
-
-
-def encolar(client, queue):
     return 0
-    
-
-def atender();
-    
-
-def salida(client, totalTime):
-    time = getTime(lambda_)
-    event = Event(countClient, "Salida del sistema", time)
-    insert_event(event)
-    if time >= totalTime:
-        return 0
 
 
 
