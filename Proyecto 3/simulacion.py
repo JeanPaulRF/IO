@@ -106,13 +106,13 @@ def create(totalTime):
     if time >= totalTime:
         return 0
     
-    decision(totalTime, client)
+    decision(totalTime, client, time)
 
     #crear siguiente cliente
     create(totalTime)
 
 
-def decision(totalTime, client):
+def decision(totalTime, client, timeActual):
     #decision cadena de markov
     n = getDecision()
 
@@ -122,6 +122,7 @@ def decision(totalTime, client):
         if queues[n].server == True:
             time = getTime(lambda_)
             insert_event(Event(client.id_client, "Entrada a cola {n}", time))
+            queues[n].clients.append(client.id_client)
         #si el servidor esta libre
         else:
             queues[n].server = True
@@ -129,11 +130,11 @@ def decision(totalTime, client):
             insert_event(Event(client.id_client, "Entra a servidor {n}", time))
 
             #tiempo de servicio
-            time = getTime(mu[n])
-            insert_event(Event(client.id_client, "Salida de cola {n}", time))
+            timeService = getTime(mu[n])
+            insert_event(Event(client.id_client, "Salida de cola {n}", timeService+timeActual))
 
             #vuelve a escoger desicion
-            decision(totalTime, client)
+            decision(totalTime, client, time)
 
     #cuando no entra a cola
     else:
