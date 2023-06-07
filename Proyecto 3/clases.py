@@ -1,6 +1,7 @@
 class Client:
     def __init__(self, id_client):
         self.id_client = id_client
+        self.cola = -1
 
 class Event:
     def __init__(self, id_client, tipe, time):

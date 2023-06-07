@@ -20,6 +20,10 @@ def simule(filename, totalTime):
     #print(f"queues: {queues}")
     #print(f"Mu: {mu}")
     #print(f"matrix: {matrix}")
+
+    for event in eventQueue:
+        print(f"Cliente: {event.id_client} - Tipo: {event.tipe} - Tiempo: {event.time}")
+
     return 0
 
 
@@ -59,23 +63,23 @@ def getTime(number):
     if len(eventQueue) == 0:
         return (-1 * math.log(random.random())) / number
     else:
-        return eventQueue[len(eventQueue) - 1].tiempo + ((-1 * math.log(random.random())) / number)
+        return eventQueue[len(eventQueue) - 1].time + ((-1 * math.log(random.random())) / number)
     
-def getDecision():
+def getDecision(colaActual):
     rand = random.random()  # Generar número aleatorio entre 0 y 1
     total = 0.0
     queue = -1
 
     # Recorrer las columnas de la matriz
     for i in range(len(matrix[0])):
-        total += matrix[0][i]  # Sumar la probabilidad de la columna actual
+        total += matrix[colaActual][i]  # Sumar la probabilidad de la columna actual
 
         # Verificar si el número aleatorio está dentro de la suma acumulada de probabilidades
         if rand <= total:
             queue = i
             break
 
-    return queue
+    return queue-1
 
 # Función para insertar un evento en el arreglo de eventos
 def insert_event(event):
@@ -114,24 +118,27 @@ def create(totalTime):
 
 def decision(totalTime, client, timeActual):
     #decision cadena de markov
-    n = getDecision()
+    if client.cola == -1:
+        n = getDecision(0)
+    else:
+        n = getDecision(client.cola+1)
 
     #cuando si entra a una cola
     if n != -1:
         #si el servidor esta ocupado
         if queues[n].server == True:
             time = getTime(lambda_)
-            insert_event(Event(client.id_client, "Entrada a cola {n}", time))
+            insert_event(Event(client.id_client, f"Entrada a cola {n}", time))
             queues[n].clients.append(client.id_client)
         #si el servidor esta libre
         else:
             queues[n].server = True
             time = getTime(lambda_)
-            insert_event(Event(client.id_client, "Entra a servidor {n}", time))
+            insert_event(Event(client.id_client, f"Entra a servidor {n}", time))
 
             #tiempo de servicio
             timeService = getTime(mu[n])
-            insert_event(Event(client.id_client, "Salida de cola {n}", timeService+timeActual))
+            insert_event(Event(client.id_client, f"Salida de cola {n}", timeService+timeActual))
 
             #vuelve a escoger desicion
             decision(totalTime, client, time)
@@ -145,4 +152,4 @@ def decision(totalTime, client, timeActual):
 
 
 
-#print(simule("archivo.txt", 100))
+print(simule("archivo.txt", 100))
